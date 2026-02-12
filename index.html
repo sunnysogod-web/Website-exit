@@ -1,29 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบลากลับบ้านระหว่างวัน</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="/_sdk/element_sdk.js"></script><!-- Firebase SDKs v9+ (ตัวใหม่) -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&amp;family=Sarabun:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
-  <style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลากลับบ้านระหว่างวัน</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Sarabun', sans-serif; }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Sarabun', sans-serif;
+        }
+        
         .font-heading { font-family: 'Kanit', sans-serif; }
         
-        /* Animated Background */
+        #app {
+            height: 100vh;
+            width: 100vw;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        
+        /* Smooth Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+        }
+        
         .school-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            position: relative;
-            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
         }
         
         .school-bg::before {
             content: '';
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
@@ -33,6 +70,7 @@
                 radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(255,255,255,0.1) 0%, transparent 30%);
             animation: float 20s ease-in-out infinite;
+            pointer-events: none;
         }
         
         @keyframes float {
@@ -64,21 +102,37 @@
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            cursor: pointer;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 40px -10px rgba(102, 126, 234, 0.5);
         }
         
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
         .btn-success {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
         }
         
         .btn-danger {
             background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
         }
         
         .input-field {
@@ -104,10 +158,12 @@
         }
         
         .decoration-circle {
-            position: absolute;
+            position: fixed;
             border-radius: 50%;
             background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
             animation: pulse-slow 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
         }
         
         @keyframes pulse-slow {
@@ -172,40 +228,58 @@
             75% { transform: rotate(10deg); }
         }
         
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 10px;
+        .content-wrapper {
+            position: relative;
+            z-index: 20;
+            padding: 1rem;
         }
     </style>
-  <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
- </head>
- <body class="h-full school-bg"><!-- Decorative Circles -->
-  <div class="decoration-circle" style="width: 300px; height: 300px; top: -100px; left: -100px;"></div>
-  <div class="decoration-circle" style="width: 200px; height: 200px; bottom: 100px; right: -50px; animation-delay: 2s;"></div>
-  <div class="decoration-circle" style="width: 150px; height: 150px; top: 50%; left: 10%; animation-delay: 1s;"></div><!-- Toast Container -->
-  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div><!-- Main App Container -->
-  <div id="app" class="min-h-full w-full relative z-20 p-4 overflow-auto"></div><!-- Plant Decorations -->
-  <div class="plant-left floating">
-   <svg width="120" height="150" viewbox="0 0 120 150" class="opacity-80"><ellipse cx="60" cy="140" rx="40" ry="10" fill="#4ade80" opacity="0.3" /> <path d="M60 140 Q55 100 30 80 Q50 90 60 70 Q70 90 90 80 Q65 100 60 140" fill="#22c55e" /> <path d="M60 70 Q50 50 35 45 Q55 55 60 30 Q65 55 85 45 Q70 50 60 70" fill="#4ade80" /> <circle cx="60" cy="25" r="8" fill="#fbbf24" /> <circle cx="58" cy="23" r="2" fill="#92400e" /> <circle cx="62" cy="23" r="2" fill="#92400e" /> <path d="M56 28 Q60 32 64 28" stroke="#92400e" fill="none" stroke-width="1.5" />
-   </svg>
-  </div>
-  <div class="plant-right floating-delay">
-   <svg width="120" height="150" viewbox="0 0 120 150" class="opacity-80"><ellipse cx="60" cy="140" rx="40" ry="10" fill="#f472b6" opacity="0.3" /> <path d="M60 140 Q55 110 40 95 Q55 100 60 80 Q65 100 80 95 Q65 110 60 140" fill="#ec4899" /> <path d="M60 80 Q45 65 35 60 Q50 65 60 45 Q70 65 85 60 Q75 65 60 80" fill="#f472b6" /> <circle cx="60" cy="40" r="10" fill="#fbbf24" /> <circle cx="57" cy="38" r="2" fill="#92400e" /> <circle cx="63" cy="38" r="2" fill="#92400e" /> <path d="M55 43 Q60 47 65 43" stroke="#92400e" fill="none" stroke-width="1.5" />
-   </svg>
-  </div><!-- Image Modal -->
-  <div id="imageModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4"><img id="imageModalImg" src="" class="max-w-full max-h-full rounded-2xl shadow-2xl" alt="รูปขยาย">
-  </div>
-  <script>
+</head>
+<body>
+    <div class="school-bg"></div>
+    
+    <!-- Decorative Circles -->
+    <div class="decoration-circle" style="width: 300px; height: 300px; top: -100px; left: -100px;"></div>
+    <div class="decoration-circle" style="width: 200px; height: 200px; bottom: 100px; right: -50px; animation-delay: 2s;"></div>
+    <div class="decoration-circle" style="width: 150px; height: 150px; top: 50%; left: 10%; animation-delay: 1s;"></div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Main App Container -->
+    <div id="app" class="relative"></div>
+
+    <!-- Plant Decorations -->
+    <div class="plant-left floating" style="z-index: 5;">
+        <svg width="120" height="150" viewBox="0 0 120 150" class="opacity-80">
+            <ellipse cx="60" cy="140" rx="40" ry="10" fill="#4ade80" opacity="0.3"/>
+            <path d="M60 140 Q55 100 30 80 Q50 90 60 70 Q70 90 90 80 Q65 100 60 140" fill="#22c55e"/>
+            <path d="M60 70 Q50 50 35 45 Q55 55 60 30 Q65 55 85 45 Q70 50 60 70" fill="#4ade80"/>
+            <circle cx="60" cy="25" r="8" fill="#fbbf24"/>
+            <circle cx="58" cy="23" r="2" fill="#92400e"/>
+            <circle cx="62" cy="23" r="2" fill="#92400e"/>
+            <path d="M56 28 Q60 32 64 28" stroke="#92400e" fill="none" stroke-width="1.5"/>
+        </svg>
+    </div>
+    
+    <div class="plant-right floating-delay" style="z-index: 5;">
+        <svg width="120" height="150" viewBox="0 0 120 150" class="opacity-80">
+            <ellipse cx="60" cy="140" rx="40" ry="10" fill="#f472b6" opacity="0.3"/>
+            <path d="M60 140 Q55 110 40 95 Q55 100 60 80 Q65 100 80 95 Q65 110 60 140" fill="#ec4899"/>
+            <path d="M60 80 Q45 65 35 60 Q50 65 60 45 Q70 65 85 60 Q75 65 60 80" fill="#f472b6"/>
+            <circle cx="60" cy="40" r="10" fill="#fbbf24"/>
+            <circle cx="57" cy="38" r="2" fill="#92400e"/>
+            <circle cx="63" cy="38" r="2" fill="#92400e"/>
+            <path d="M55 43 Q60 47 65 43" stroke="#92400e" fill="none" stroke-width="1.5"/>
+        </svg>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+        <img id="imageModalImg" src="" class="max-w-full max-h-full rounded-2xl shadow-2xl" alt="รูปขยาย">
+    </div>
+
+    <script>
         // ==================== Firebase Configuration ====================
         const firebaseConfig = {
             apiKey: "AIzaSyCm9QsD6NwRF0zusMzgESEyA43hjEyHRhw",
@@ -218,7 +292,6 @@
             measurementId: "G-ESPPG76N3H"
         };
         
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         
@@ -232,11 +305,10 @@
             studentRequests: [],
             filterStatus: 'all',
             unsubscribe: null,
-            schoolName: 'โรงเรียสามร้อยยอดวิทยาคม',
+            schoolName: 'โรงเรียนแห่งความสุข',
             currentRejectionId: null
         };
         
-        // Teacher credentials
         const TEACHER_CREDENTIALS = {
             username: 'teacher',
             password: '1234'
@@ -348,29 +420,33 @@
         // ==================== Render Functions ====================
         function render() {
             const app = document.getElementById('app');
+            let html = '';
             
             switch (state.currentPage) {
                 case 'login':
-                    app.innerHTML = renderLoginPage();
+                    html = renderLoginPage();
                     break;
                 case 'student-dashboard':
-                    app.innerHTML = renderStudentDashboard();
-                    setupStudentListeners();
+                    html = renderStudentDashboard();
                     break;
                 case 'teacher-dashboard':
-                    app.innerHTML = renderTeacherDashboard();
-                    setupTeacherListeners();
+                    html = renderTeacherDashboard();
                     break;
+            }
+            
+            app.innerHTML = `<div class="content-wrapper">${html}</div>`;
+            
+            if (state.currentPage === 'student-dashboard') {
+                setupStudentListeners();
+            } else if (state.currentPage === 'teacher-dashboard') {
+                setupTeacherListeners();
             }
         }
         
         function renderLoginPage() {
             return `
-                <div class="min-h-full flex items-center justify-center py-12">
-                    <div class="glass-card rounded-3xl p-8 w-full max-w-md mx-4 relative overflow-hidden">
-                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-50"></div>
-                        <div class="absolute -bottom-10 -left-10 w-24 h-24 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full opacity-50"></div>
-                        
+                <div class="min-h-screen flex items-center justify-center py-12">
+                    <div class="glass-card rounded-3xl p-8 w-full max-w-md">
                         <div class="text-center relative z-10 mb-8">
                             <div class="floating inline-block mb-4">
                                 <svg width="100" height="100" viewBox="0 0 100 100" class="character">
@@ -398,7 +474,7 @@
                             <p class="text-gray-500 mt-2">ระบบลากลับบ้านระหว่างวัน</p>
                         </div>
                         
-                        <div class="flex bg-gray-100 rounded-2xl p-1 mb-6 relative z-10">
+                        <div class="flex bg-gray-100 rounded-2xl p-1 mb-6">
                             <button onclick="switchLoginType('student')" id="tabStudent" 
                                 class="flex-1 py-3 rounded-xl font-medium transition-all duration-300 tab-active">
                                 🎒 นักเรียน
@@ -409,7 +485,7 @@
                             </button>
                         </div>
                         
-                        <div id="studentLoginForm" class="space-y-4 relative z-10">
+                        <div id="studentLoginForm" class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">🔢 รหัสนักเรียน</label>
                                 <input type="text" id="studentIdInput" placeholder="เช่น 12345"
@@ -431,7 +507,7 @@
                             </button>
                         </div>
                         
-                        <div id="teacherLoginForm" class="space-y-4 relative z-10 hidden">
+                        <div id="teacherLoginForm" class="space-y-4 hidden">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">👤 ชื่อผู้ใช้</label>
                                 <input type="text" id="teacherUsernameInput" placeholder="ชื่อผู้ใช้"
@@ -455,7 +531,7 @@
         
         function renderStudentDashboard() {
             return `
-                <div class="max-w-4xl mx-auto">
+                <div class="max-w-4xl mx-auto pb-20">
                     <div class="glass-card rounded-3xl p-6 mb-6">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <div class="flex items-center gap-4">
@@ -537,7 +613,7 @@
                         </form>
                     </div>
                     
-                    <div class="glass-card rounded-3xl p-6">
+                    <div class="glass-card rounded-3xl p-6 mb-20">
                         <h3 class="font-heading text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                             <span class="text-2xl">📚</span> ประวัติการขอลา
                         </h3>
@@ -600,8 +676,8 @@
             const pendingCount = state.requests.filter(r => r.status === 'pending').length;
             
             return `
-                <div class="max-w-6xl mx-auto">
-                    <div class="glass-card rounded-3xl p-6 mb-6">
+                <div class="max-w-6xl mx-auto pb-20">
+                    <div class="glass-card rounded-3xl p-6 mb-6 sticky top-0 z-30">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <div class="flex items-center gap-4">
                                 <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center text-white text-2xl floating">
@@ -649,26 +725,26 @@
                         </div>
                     </div>
                     
-                    <div class="glass-card rounded-3xl p-6">
+                    <div class="glass-card rounded-3xl p-6 mb-20">
                         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                             <h3 class="font-heading text-xl font-bold text-gray-800 flex items-center gap-2">
                                 <span class="text-2xl">📋</span> ตรวจสอบคำขอ
                             </h3>
-                            <div class="flex bg-gray-100 rounded-xl p-1">
+                            <div class="flex bg-gray-100 rounded-xl p-1 overflow-x-auto">
                                 <button onclick="setFilter('all')" 
-                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all ${state.filterStatus === 'all' ? 'bg-white shadow text-purple-600' : 'text-gray-600'}">
+                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.filterStatus === 'all' ? 'bg-white shadow text-purple-600' : 'text-gray-600'}">
                                     ทั้งหมด
                                 </button>
                                 <button onclick="setFilter('pending')" 
-                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all ${state.filterStatus === 'pending' ? 'bg-white shadow text-orange-600' : 'text-gray-600'}">
+                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.filterStatus === 'pending' ? 'bg-white shadow text-orange-600' : 'text-gray-600'}">
                                     รอตรวจสอบ
                                 </button>
                                 <button onclick="setFilter('approved')" 
-                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all ${state.filterStatus === 'approved' ? 'bg-white shadow text-green-600' : 'text-gray-600'}">
+                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.filterStatus === 'approved' ? 'bg-white shadow text-green-600' : 'text-gray-600'}">
                                     อนุมัติแล้ว
                                 </button>
                                 <button onclick="setFilter('rejected')" 
-                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all ${state.filterStatus === 'rejected' ? 'bg-white shadow text-red-600' : 'text-gray-600'}">
+                                    class="px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.filterStatus === 'rejected' ? 'bg-white shadow text-red-600' : 'text-gray-600'}">
                                     ไม่อนุมัติ
                                 </button>
                             </div>
@@ -905,8 +981,9 @@
         
         function setupStudentListeners() {
             const form = document.getElementById('leaveForm');
-            const dateInput = document.getElementById('leaveDate');
+            if (!form) return;
             
+            const dateInput = document.getElementById('leaveDate');
             const today = new Date().toISOString().split('T')[0];
             dateInput.value = today;
             
@@ -926,125 +1003,4 @@
                 }
                 
                 const submitBtn = document.getElementById('submitBtn');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `<div class="spinner mx-auto"></div>`;
-                
-                const result = await submitLeaveRequest({
-                    studentId: state.studentId,
-                    studentName: state.studentName,
-                    leaveDate: leaveDate,
-                    leaveTime: leaveTime,
-                    returnTime: returnTime || null,
-                    reason: reason,
-                    parentName: parentName,
-                    parentPhone: parentPhone,
-                    parentPhotoUrl: currentPhotoData || null
-                });
-                
-                if (result.success) {
-                    showToast('ส่งคำขอลาสำเร็จ!', 'success');
-                    form.reset();
-                    document.getElementById('leaveDate').value = today;
-                    currentPhotoData = null;
-                    document.getElementById('photoPreview').innerHTML = `
-                        <div class="text-5xl mb-2">📷</div>
-                        <p class="text-gray-500">คลิกเพื่อถ่ายรูปหรือเลือกรูป</p>
-                        <p class="text-xs text-gray-400 mt-1">รูปจะถูกบีบอัดอัตโนมัติ</p>
-                    `;
-                } else {
-                    showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
-                }
-                
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<span>📤</span> ส่งคำขอลา`;
-            });
-        }
-        
-        function setupTeacherListeners() {
-            // Teacher-specific listeners if needed
-        }
-        
-        function setFilter(status) {
-            state.filterStatus = status;
-            render();
-        }
-        
-        async function approveRequest(requestId) {
-            const result = await updateRequestStatus(requestId, 'approved');
-            if (result.success) {
-                showToast('อนุมัติคำขอสำเร็จ!', 'success');
-            } else {
-                showToast('เกิดข้อผิดพลาด', 'error');
-            }
-        }
-        
-        function openRejectionModal(requestId) {
-            state.currentRejectionId = requestId;
-            document.getElementById('rejectionModal').classList.remove('hidden');
-            document.getElementById('rejectionModal').classList.add('flex');
-            document.getElementById('rejectionNote').value = '';
-        }
-        
-        function closeRejectionModal() {
-            state.currentRejectionId = null;
-            document.getElementById('rejectionModal').classList.add('hidden');
-            document.getElementById('rejectionModal').classList.remove('flex');
-        }
-        
-        async function confirmRejection() {
-            const note = document.getElementById('rejectionNote').value.trim();
-            if (!note) {
-                showToast('กรุณาระบุเหตุผลที่ไม่อนุมัติ', 'error');
-                return;
-            }
-            
-            const result = await updateRequestStatus(state.currentRejectionId, 'rejected', note);
-            if (result.success) {
-                showToast('บันทึกการไม่อนุมัติสำเร็จ', 'success');
-                closeRejectionModal();
-            } else {
-                showToast('เกิดข้อผิดพลาด', 'error');
-            }
-        }
-        
-        function openImageModal(imageUrl) {
-            const modal = document.getElementById('imageModal');
-            const img = document.getElementById('imageModalImg');
-            img.src = imageUrl;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            modal.onclick = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            };
-        }
-        
-        // ==================== Element SDK ====================
-        const defaultConfig = {
-            school_name: 'โรงเรียนแห่งความสุข'
-        };
-        
-        if (window.elementSdk) {
-            window.elementSdk.init({
-                defaultConfig,
-                onConfigChange: async (config) => {
-                    state.schoolName = config.school_name || defaultConfig.school_name;
-                    render();
-                },
-                mapToCapabilities: (config) => ({
-                    recolorables: [],
-                    borderables: [],
-                    fontEditable: undefined,
-                    fontSizeable: undefined
-                }),
-                mapToEditPanelValues: (config) => new Map([
-                    ['school_name', config.school_name || defaultConfig.school_name]
-                ])
-            });
-        }
-        
-        // Initialize app
-        render();
-    </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cc845520241479b',t:'MTc3MDg1OTMwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+           
